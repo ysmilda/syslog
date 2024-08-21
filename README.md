@@ -5,6 +5,7 @@ The goal of this library is to provide a simple and efficient way to parse syslo
 ## Supported RFCs
 
 Currently, the library supports the following RFCs:
+ - [RFC3164](https://datatracker.ietf.org/doc/html/rfc3164)
  - [RFC5424](https://datatracker.ietf.org/doc/html/rfc5424)
 
 The implementation is close to feature complete for the RFC5424 format. The `SD-IDS` are not yet supported, however feel free to open an issue if you need them.
@@ -12,6 +13,15 @@ The implementation is close to feature complete for the RFC5424 format. The `SD-
 ## Usage
 
 The library is designed around the `io.ByteScanner` interface. This allows for parsing in a streaming fashion as well as from memory.
+
+```go
+parser := rfc3164.NewParser()
+message := []byte("<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
+msg, err := parser.Parse(bytes.NewReader(message))
+if err != nil {
+    panic(err)
+}
+```
 
 ```go
 parser := rfc5424.NewParser()
@@ -22,6 +32,7 @@ if err != nil {
 }
 ```
 
+
 The parser will take options during initialisation to allow for customisation of the parsing process. The options are passed as variadic arguments to the `NewParser` function.
 
 ```go
@@ -31,5 +42,4 @@ parser := rfc5424.NewParser(rfc5424.WithParseStructuredDataElements())
 
 ## TODO
 
-- [ ] Support the [RFC3164](https://datatracker.ietf.org/doc/html/rfc3164) format.
 - [ ] Allow for filtering/early return through parser options.

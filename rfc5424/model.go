@@ -22,6 +22,13 @@ type PRI struct {
 	value byte
 }
 
+func NewPRI(value byte) (PRI, error) {
+	if value > 191 {
+		return PRI{}, ErrInvalidPRI
+	}
+	return PRI{value: value}, nil
+}
+
 // Facility returns the facility value of the PRI.
 func (p PRI) Facility() byte {
 	return p.value & 0xF8 >> 3
