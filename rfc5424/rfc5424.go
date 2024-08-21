@@ -4,8 +4,6 @@ import (
 	"io"
 	"strings"
 	"time"
-
-	"github.com/ysmilda/syslog/pkg/characters"
 )
 
 type Parser struct {
@@ -124,7 +122,7 @@ func parsePRI(input io.ByteScanner) (byte, error) {
 			}
 			return PRI, nil
 		}
-		if !characters.IsDigit(b) {
+		if b < '0' || b > '9' {
 			return 0, ErrInvalidPRI
 		}
 		PRI = PRI*10 + (b - '0')
@@ -299,7 +297,6 @@ func parseStructuredDataElements(input string) (*[]StructuredDataElement, error)
 
 // parseString parses a string from the input with a maximum length according to the following rules.
 // STRING = NILVALUE / 1*[max]PRINTUSASCII SP
-
 func parseString(input io.ByteScanner, max int, e error) (string, error) {
 	isNil, err := checkNilValue(input)
 	if err != nil {
