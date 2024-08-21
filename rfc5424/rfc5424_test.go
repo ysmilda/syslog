@@ -75,7 +75,7 @@ func TestParse(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		r := NewRFC5424()
+		r := NewParser()
 		msg, err := r.Parse(bytes.NewReader(tc.msg))
 		assert.Equal(t, tc.expectedMessage, msg, tc.name)
 		assert.Equal(t, tc.expectedError, err, tc.name)
@@ -475,7 +475,7 @@ func TestParseStructuredDataElements(t *testing.T) {
 	testcases := []struct {
 		name          string
 		msg           []byte
-		expectedSD    *[]StructuredDataElements
+		expectedSD    *[]StructuredDataElement
 		expectedError error
 	}{
 		{
@@ -486,7 +486,7 @@ func TestParseStructuredDataElements(t *testing.T) {
 		{
 			name: "valid structured-data-elements - example 1",
 			msg:  []byte("[exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] "),
-			expectedSD: &[]StructuredDataElements{
+			expectedSD: &[]StructuredDataElement{
 				{
 					ID: "exampleSDID@32473",
 					Parameters: map[string]string{
@@ -500,7 +500,7 @@ func TestParseStructuredDataElements(t *testing.T) {
 		{
 			name: "valid structured-data-elements - example 2",
 			msg:  []byte("[exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"][examplePriority@32473 class=\"high\"] "),
-			expectedSD: &[]StructuredDataElements{
+			expectedSD: &[]StructuredDataElement{
 				{
 					ID: "exampleSDID@32473",
 					Parameters: map[string]string{
@@ -631,7 +631,7 @@ func TestCheckNilValue(t *testing.T) {
 }
 
 func BenchmarkParse(b *testing.B) {
-	r := RFC5424{}
+	r := Parser{}
 	msg := []byte("<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] An application event log entry...")
 	for i := 0; i < b.N; i++ {
 		_, err := r.Parse(bytes.NewReader(msg))
