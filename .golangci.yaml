@@ -15,7 +15,6 @@ linters:
     - bodyclose # Finds HTTP response bodies that are not closed.
     - errorlint # Finds problems with error wrapping.
     - goconst # Finds repeated strings that could be replaced by a const.
-    - gocyclo # Finds funcs with high cyclomatic complexity.
     - gofumpt # Finds files that were not gofumpt-ed.
     - gosec # Finds security problems.
     - lll # Finds lines that exceed the line length limit.

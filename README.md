@@ -38,6 +38,14 @@ The parser will take options during initialisation to allow for customisation of
 ```go
 // Parse the structured data into its elements instead of just the raw string.
 parser := rfc5424.NewParser(rfc5424.WithParseStructuredDataElements())
+
+// Stop parsing based on the given filters. All filters can be found in rfc3164/filter.go and rfc5424/filter.go.
+parser := rfc5424.NewParser(rfc5424.FilterSeverity(3))
+
+// If the message parsing has been stopped early, the parser will return an ErrMessageIgnored error.
+if errors.Is(err, rfc5424.ErrMessageIgnored) {
+    // The message has not been parsed as it didn't fullfill the filter requirements.
+}
 ```
 
 ## TODO

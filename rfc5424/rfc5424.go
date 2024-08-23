@@ -2,25 +2,38 @@ package rfc5424
 
 import (
 	"io"
+	"slices"
 	"strings"
 	"time"
 )
 
 type Parser struct {
+	// options
 	parseStructuredDataElements bool
+
+	// filters
+	severityFilter *int
+	facilityFilter *int
+	hostnameFilter []string
+	appNameFilter  []string
+	procIDFilter   []string
+	msgIDFilter    []string
 }
+
+type parseOption func(*Parser)
 
 // NewParser creates a new Parser with the provided options.
 func NewParser(options ...parseOption) Parser {
-	r := Parser{}
+	p := Parser{}
 	for _, option := range options {
-		option(&r)
+		option(&p)
 	}
-	return r
+	return p
 }
 
-// Parse tries to parse a syslog message from the input. If the input is not a valid syslog message, an error is returned.
-func (r Parser) Parse(input io.ByteScanner) (Message, error) {
+// Parse tries to parse a syslog message from the input.
+// If the input is not a valid syslog message, an error is returned.
+func (p Parser) Parse(input io.ByteScanner) (Message, error) {
 	// Taken from https://datatracker.ietf.org/doc/html/rfc5424#section-6
 	// The syslog message has the following ABNF [RFC5234] definition:
 	// SYSLOG-MSG      = HEADER SP STRUCTURED-DATA [SP MSG]
@@ -31,9 +44,15 @@ func (r Parser) Parse(input io.ByteScanner) (Message, error) {
 		elements *[]StructuredDataElement
 	)
 
-	pri, err := parsePRI(input)
+	priVal, err := parsePRI(input)
 	if err != nil {
 		return m, err
+	}
+	pri := PRI{priVal}
+
+	if p.facilityFilter != nil && pri.Facility() > byte(*p.facilityFilter) ||
+		p.severityFilter != nil && pri.Severity() > byte(*p.severityFilter) {
+		return m, ErrMessageIgnored
 	}
 
 	version, err := parseVersion(input)
@@ -51,9 +70,17 @@ func (r Parser) Parse(input io.ByteScanner) (Message, error) {
 		return m, err
 	}
 
+	if p.hostnameFilter != nil && !slices.Contains(p.hostnameFilter, hostname) {
+		return m, ErrMessageIgnored
+	}
+
 	appName, err := parseAppName(input)
 	if err != nil {
 		return m, err
+	}
+
+	if p.appNameFilter != nil && !slices.Contains(p.appNameFilter, appName) {
+		return m, ErrMessageIgnored
 	}
 
 	procID, err := parseProcID(input)
@@ -61,9 +88,17 @@ func (r Parser) Parse(input io.ByteScanner) (Message, error) {
 		return m, err
 	}
 
+	if p.procIDFilter != nil && !slices.Contains(p.procIDFilter, procID) {
+		return m, ErrMessageIgnored
+	}
+
 	msgID, err := parseMsgID(input)
 	if err != nil {
 		return m, err
+	}
+
+	if p.msgIDFilter != nil && !slices.Contains(p.msgIDFilter, msgID) {
+		return m, ErrMessageIgnored
 	}
 
 	structuredData, err := parseStructuredData(input)
@@ -71,7 +106,7 @@ func (r Parser) Parse(input io.ByteScanner) (Message, error) {
 		return m, err
 	}
 
-	if r.parseStructuredDataElements {
+	if p.parseStructuredDataElements {
 		elements, err = parseStructuredDataElements(structuredData)
 		if err != nil {
 			return m, err
@@ -88,7 +123,7 @@ func (r Parser) Parse(input io.ByteScanner) (Message, error) {
 	}
 
 	return Message{
-		PRI:                    PRI{pri},
+		PRI:                    pri,
 		Version:                version,
 		Timestamp:              timestamp,
 		Hostname:               hostname,
@@ -213,7 +248,7 @@ func parseMsgID(input io.ByteScanner) (string, error) {
 	return parseString(input, 32, ErrInvalidMsgID)
 }
 
-// parseStructuredData parses the STRUCTURED-DATA part of a syslog message into a string according to the following rules.
+// parseStructuredData parses the STRUCTURED-DATA part of a syslog message according to the following rules.
 // STRUCTURED-DATA = NILVALUE / 1*SD-ELEMENT
 // SD-ELEMENT      = "[" SD-ID *(SP SD-PARAM) "]"
 func parseStructuredData(input io.ByteScanner) (string, error) {
