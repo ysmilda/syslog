@@ -2,23 +2,41 @@ package rfc3164
 
 import (
 	"io"
+	"slices"
 	"strings"
 	"time"
 )
 
-type Parser struct{}
+type Parser struct {
+	// filters
+	severityFilter *int
+	facilityFilter *int
+	hostnameFilter []string
+}
+
+type parseOption func(*Parser)
 
 // NewParser creates a new Parser.
-func NewParser() Parser {
-	return Parser{}
+func NewParser(options ...parseOption) Parser {
+	p := Parser{}
+	for _, option := range options {
+		option(&p)
+	}
+	return p
 }
 
 func (p Parser) Parse(input io.ByteScanner) (Message, error) {
 	var m Message
 
-	pri, err := parsePRI(input)
+	priVal, err := parsePRI(input)
 	if err != nil {
 		return m, err
+	}
+	pri := PRI{priVal}
+
+	if p.facilityFilter != nil && pri.Facility() > byte(*p.facilityFilter) ||
+		p.severityFilter != nil && pri.Severity() > byte(*p.severityFilter) {
+		return m, ErrMessageIgnored
 	}
 
 	timestamp, err := parseTimestamp(input)
@@ -31,10 +49,14 @@ func (p Parser) Parse(input io.ByteScanner) (Message, error) {
 		return m, err
 	}
 
+	if p.hostnameFilter != nil && !slices.Contains(p.hostnameFilter, hostname) {
+		return m, ErrMessageIgnored
+	}
+
 	tag, content := parseMessage(input)
 
 	return Message{
-		PRI:       PRI{pri},
+		PRI:       pri,
 		Timestamp: timestamp,
 		Hostname:  hostname,
 		Tag:       tag,

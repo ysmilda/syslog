@@ -74,9 +74,10 @@ func TestParse(t *testing.T) {
 		},
 	}
 
+	p := NewParser()
+
 	for _, tc := range testcases {
-		r := NewParser()
-		msg, err := r.Parse(bytes.NewReader(tc.msg))
+		msg, err := p.Parse(bytes.NewReader(tc.msg))
 		assert.Equal(t, tc.expectedMessage, msg, tc.name)
 		assert.Equal(t, tc.expectedError, err, tc.name)
 	}
@@ -631,10 +632,11 @@ func TestCheckNilValue(t *testing.T) {
 }
 
 func BenchmarkParse(b *testing.B) {
-	r := Parser{}
+	p := NewParser()
 	msg := []byte("<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] An application event log entry...")
+
 	for i := 0; i < b.N; i++ {
-		_, err := r.Parse(bytes.NewReader(msg))
+		_, err := p.Parse(bytes.NewReader(msg))
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -53,9 +53,10 @@ func TestParse(t *testing.T) {
 		},
 	}
 
+	p := NewParser()
+
 	for _, tc := range testcases {
-		r := NewParser()
-		msg, err := r.Parse(bytes.NewReader(tc.msg))
+		msg, err := p.Parse(bytes.NewReader(tc.msg))
 		assert.Nil(t, err, tc.name)
 		assert.Equal(t, tc.expectedMessage, msg, tc.name)
 	}
@@ -269,10 +270,11 @@ func TestParseMessage(t *testing.T) {
 }
 
 func BenchmarkParse(b *testing.B) {
-	r := Parser{}
+	p := NewParser()
 	msg := []byte("<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
+
 	for i := 0; i < b.N; i++ {
-		_, err := r.Parse(bytes.NewReader(msg))
+		_, err := p.Parse(bytes.NewReader(msg))
 		if err != nil {
 			b.Fatal(err)
 		}

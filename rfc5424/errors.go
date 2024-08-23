@@ -3,6 +3,7 @@ package rfc5424
 import "errors"
 
 var (
+	ErrMessageIgnored        = errors.New("message ignored")
 	ErrInvalidNilValue       = errors.New("invalid nil value")
 	ErrInvalidPRI            = errors.New("invalid PRI")
 	ErrInvalidVersion        = errors.New("invalid version")
